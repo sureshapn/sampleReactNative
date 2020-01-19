@@ -70,8 +70,9 @@ connection.start()
       <ThemeProvider>
         <Overlay isVisible={this.state.loading} width="auto"
   height="auto">
+        <View>
           <Text>Please wait!</Text>
-          <Text>Connecting to  device...</Text>
+          <Text>Connecting to  device...</Text></View>
         </Overlay>
       <Header
         leftComponent={{ icon: 'menu', color: '#fff' }}
