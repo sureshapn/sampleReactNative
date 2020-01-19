@@ -1,55 +1,34 @@
 import React, {Component} from 'react';
-import { StyleSheet, Text, View, Image, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, Image, ScrollView, Alert } from 'react-native';
 import { Header, ThemeProvider, Button, Card, ListItem } from 'react-native-elements';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { LogLevel, HubConnectionBuilder } from '@aspnet/signalr';
 const imageUrl = 'https://storageaccounttry9fc6.blob.core.windows.net/outcontainer/8856730-fruit-and-vegetables-in-the-fridge.jpg'
+import { Overlay } from 'react-native-elements';
 
 const list = [
-  {
-    name: 'Apple',
-    subtitle: 'Available'
-  },
-  {
-    name: 'Orange',
-    subtitle: '1 Available'
-  },
-  {
-    name: 'Orange',
-    subtitle: '1 Available'
-  },
-  {
-    name: 'Orange',
-    subtitle: '1 Available'
-  },
-  {
-    name: 'Orange',
-    subtitle: '1 Available'
-  },
-  {
-    name: 'Orange',
-    subtitle: '1 Available'
-  },
+  'Apple', 'Orange', 'Apple', 'Orange'
 ]
 
 export default class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      response: '',
-      imageUrl: imageUrl
+      response: list,
+      imageUrl: imageUrl,
+      triggerUrl: '',
+      loading: false,
     }
   }
-  fetchTriggerApi = () => {
-    return fetch('https://facebook.github.io/react-native/movies.json')
-    .then((response) => response.json())
-    .then((responseJson) => {
-      return responseJson.movies;
-    })
-    .catch((error) => {
+  fetchTriggerApi = async() => {
+    try {
+    const response = await fetch('https://www.subhu.xyz/env.json')
+    const {endPoint} = await response.json()
+      this.setState({triggerUrl: endPoint })
+    } catch(error) {
       console.error(error);
-    });
+    };
   }
   componentDidMount() {
     let connection = new HubConnectionBuilder()
@@ -59,7 +38,8 @@ export default class App extends Component {
  
 connection.on("newMessage", ({text}) => {
   const {response, imageUrl} = JSON.parse(text)
-    this.setState({response, imageUrl})
+  const responseData = JSON.parse(response);
+    this.setState({response: responseData.description.tags, imageUrl, loading: false})
 });
  
 connection.start()
@@ -68,17 +48,41 @@ connection.start()
     this.fetchTriggerApi();
 
   }
+  triggerCapture = async() => {
+    this.setState({loading: true})
+    console.log(this.state.triggerUrl)
+    try {
+
+    await fetch(this.state.triggerUrl)
+    } catch(e) {
+      this.setState({loading: false})
+      console.log(e)
+    }
+    
+  }
+
+  alertMsg = () => {
+    Alert.alert("Order placed..")
+  }
+
   render() {
   return (
       <ThemeProvider>
+        <Overlay isVisible={this.state.loading} width="auto"
+  height="auto">
+          <Text>Please wait!</Text>
+          <Text>Connecting to  device...</Text>
+        </Overlay>
       <Header
         leftComponent={{ icon: 'menu', color: '#fff' }}
-        centerComponent={{ text: 'MY TITLE', style: { color: '#fff' } }}
+        centerComponent={{ text: 'SMART THING', style: { color: '#fff' } }}
         rightComponent={{ icon: 'home', color: '#fff' }}
       />
       <View style={{flex: 1}}>
+        
         <View style={{marginTop:20,width: "40%", alignSelf: 'center'}}>
           <Button
+          onPress={this.triggerCapture}
             icon={
               <Icon
                 name="camera"
@@ -99,12 +103,11 @@ connection.start()
         <View height={200}>
         <ScrollView style={{ marginLeft: 10, marginRight: 10}}>
           {
-            list.map((l, i) => (
+            this.state.response.map((l, i) => (
               <ListItem
                 key={i}
-                title={l.name}
-                subtitle={l.subtitle}
-                rightIcon={{ icon: 'buy', color: 'orange' }}
+                title={l}
+                subtitle='Available'
                 bottomDivider
                 checkBox={{checked: false}}
               />
@@ -117,6 +120,7 @@ connection.start()
           <View style={{width: "40%", alignSelf: 'center'}}>
           <Button
           size={20}
+          onPress={this.alertMsg}
           icon={
             <Icon
               name="opencart"
