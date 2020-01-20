@@ -11,7 +11,10 @@ const list = [
   'Apple', 'Orange', 'Apple', 'Orange'
 ]
 
+
 export default class App extends Component {
+  _isMounted = false;
+
   constructor(props) {
     super(props)
     this.state = {
@@ -30,23 +33,32 @@ export default class App extends Component {
       console.error(error);
     };
   }
+
+  onMessage = ({text}) => {
+    const {response, imageUrl} = JSON.parse(text)
+    const responseData = JSON.parse(response);
+      this.setState({response: responseData.description.tags, imageUrl, loading: false})
+  }
+
   componentDidMount() {
+    this._isMounted = true;
+
+
+    this.fetchTriggerApi();
+
     let connection = new HubConnectionBuilder()
     .withUrl("https://testsig.azurewebsites.net/api")
     .configureLogging(LogLevel.Information)
     .build();
  
-connection.on("newMessage", ({text}) => {
-  const {response, imageUrl} = JSON.parse(text)
-  const responseData = JSON.parse(response);
-    this.setState({response: responseData.description.tags, imageUrl, loading: false})
-});
+connection.on("newMessage", this.onMessage);
  
 connection.start()
     .then(() => connection.invoke("send", "Hello"));
 
-    this.fetchTriggerApi();
-
+  }
+  componentWillUnmount() {
+    this._isMounted = false;
   }
   triggerCapture = async() => {
     this.setState({loading: true})
